@@ -1,0 +1,61 @@
+   <div class="parent">
+<div id="app">
+
+        <!-- Contenedor del login -->
+        <div class="login-container">
+
+            <!-- Logo / Icono -->
+            <div class="login-icon">✦</div>
+
+            <!-- Título -->
+            <h1 class="login-title">Login</h1>
+            <p class="login-sub">sign in to your account</p>
+
+            <!-- Formulario -->
+            <form id="loginForm" autocomplete="off">
+
+                <!-- Campo Username -->
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="userName" placeholder="Enter your username" required [(ngModel)]="loginObj.userName" />
+                </div>
+
+                <!-- Campo Password -->
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="passWord" placeholder="Enter your password" required [(ngModel)] ="loginObj.passWord" />
+                </div>
+
+                <!-- Opciones: Remember me + Forgot password -->
+                <div class="login-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" />
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                    <a href="#" class="forgot-link">Forgot password?</a>
+                </div>
+
+                <!-- Botón de inicio de sesión -->
+                <button type="submit" class="btn-login">SIGN IN</button>
+
+                <!-- Enlace a registro -->
+                <p class="signup-link">
+                    Don't have an account? <a href="#">Sign up</a>
+                </p>
+
+            </form>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="login-footer">
+            <span>✦ zirak9 · 2026</span>
+        </footer>
+
+    </div>
+
+   </div>
+   
+   
+   
