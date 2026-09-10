@@ -14,10 +14,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <!-- Contenu de la liste (Tableau ou Grille) -->
-                <p class="text-muted text-center my-4">No products found. Click "Add New" to create one.</p>
-            </div>
+  
         </div>
     </div>
 
@@ -50,6 +47,36 @@
                                 <input type="text" class="form-control form-control-sm" name="productName" [(ngModel)]="productObj.productName" required>
                             </div>
 
+
+                            <!-- Category -->
+<div class="col-12">
+
+    <label class="form-label small fw-bold">
+        Category
+    </label>
+
+    <select
+        class="form-select form-select-sm"
+        name="categoryId"
+        [(ngModel)]="productObj.categoryId"
+        required
+    >
+
+        <option [ngValue]="0">
+            Select a category
+        </option>
+
+        @for (category of categoryList; track category.categoryId) {
+
+            <option [ngValue]="category.categoryId">
+                {{ category.categoryName }}
+            </option>
+
+        }
+
+    </select>
+
+</div>
                             <!-- Short Name -->
                             <div class="col-12">
                                 <label class="form-label small fw-bold">Short Name</label>
