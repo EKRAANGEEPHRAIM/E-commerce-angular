@@ -3,53 +3,56 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ProductList } from './product-list/product-list';
+import { ProductFilter } from './product-filter/product-filter';
+import { ProductForm } from './product-form/product-form';
+
+import { ProductModel } from '../../../models/product.model';
+import { CategoryModel } from '../../../models/category.model';
+
+import {
+  createEmptyProductForm,
+  ProductFormModel
+} from '../../../models/product-form.model';
+
 @Component({
   selector: 'app-product',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ProductList,
+    ProductFilter,
+    ProductForm
+  ],
   templateUrl: './product.html',
   styleUrl: './product.css',
 })
 export class Product implements OnInit {
 
-  isSidePanelVisible: boolean = false;
+  isSidePanelVisible = false;
 
-  productList: any[] = [];
+  productList: ProductModel[] = [];
 
-  categoryList: any[] = [];
+  categoryList: CategoryModel[] = [];
 
-  // Produit utilisé par le formulaire
-  productObj: any = {
-    productId: 0,
-    productSku: '',
-    productName: '',
-    productPrice: 0,
-    productShortName: '',
-    productDescription: '',
-    createdDate: new Date(),
-    deliveryTimeSpan: '',
-    productImageUrl: '',
-    categoryId: 0
-  };
+  filteredProductList: ProductModel[] = [];
 
+  currentSearchTerm = '';
+
+  currentCategoryId = 0;
+
+  productObj: ProductFormModel =
+    createEmptyProductForm();
 
   constructor(
     private productService: ProductService
   ) {}
 
-
-  // =========================
-  // INITIALISATION
-  // =========================
-
   ngOnInit(): void {
-
     this.getAllCategory();
-
     this.getAllProducts();
-
   }
-
 
   // =========================
   // GET PRODUCTS
@@ -59,24 +62,28 @@ export class Product implements OnInit {
 
     this.productService.getAllProducts().subscribe({
 
-      next: (res: any) => {
-
-        console.log('Products:', res.data);
+      next: (res) => {
 
         this.productList = res.data;
+
+        this.filteredProductList = [
+          ...this.productList
+        ];
 
       },
 
       error: (err) => {
 
-        console.error('Error loading products:', err);
+        console.error(
+          'Error loading products:',
+          err
+        );
 
       }
 
     });
 
   }
-
 
   // =========================
   // GET CATEGORIES
@@ -86,9 +93,7 @@ export class Product implements OnInit {
 
     this.productService.getCategory().subscribe({
 
-      next: (res: any) => {
-
-        console.log('Categories:', res.data);
+      next: (res) => {
 
         this.categoryList = res.data;
 
@@ -96,7 +101,10 @@ export class Product implements OnInit {
 
       error: (err) => {
 
-        console.error('Error loading categories:', err);
+        console.error(
+          'Error loading categories:',
+          err
+        );
 
       }
 
@@ -104,21 +112,39 @@ export class Product implements OnInit {
 
   }
 
-
   // =========================
-  // GET CATEGORY NAME
+  // FILTER
   // =========================
 
-  getCategoryName(categoryId: number): string {
+  filterProducts(
+    searchTerm: string,
+    categoryId: number
+  ) {
 
-    const category = this.categoryList.find(
-      category => category.categoryId === categoryId
-    );
+    const search =
+      searchTerm.toLowerCase().trim();
 
-    return category?.categoryName ?? 'Unknown';
+    this.filteredProductList =
+      this.productList.filter(product => {
+
+        const matchesSearch =
+          product.productName
+            .toLowerCase()
+            .includes(search) ||
+          product.productSku
+            .toLowerCase()
+            .includes(search);
+
+        const matchesCategory =
+          categoryId === 0 ||
+          product.categoryId === categoryId;
+
+        return matchesSearch &&
+               matchesCategory;
+
+      });
 
   }
-
 
   // =========================
   // OPEN PANEL
@@ -132,7 +158,6 @@ export class Product implements OnInit {
 
   }
 
-
   // =========================
   // CLOSE PANEL
   // =========================
@@ -143,40 +168,191 @@ export class Product implements OnInit {
 
   }
 
-
   // =========================
   // RESET FORM
   // =========================
 
   resetForm() {
 
-    this.productObj = {
-
-      productId: 0,
-      productSku: '',
-      productName: '',
-      productPrice: 0,
-      productShortName: '',
-      productDescription: '',
-      createdDate: new Date(),
-      deliveryTimeSpan: '',
-      productImageUrl: '',
-      categoryId: 0
-
-    };
+    this.productObj =
+      createEmptyProductForm();
 
   }
 
+  // =========================
+  // SAVE
+  // =========================
+
+  onSaveProduct(form: ProductFormModel) {
+
+    if (form.productId === 0) {
+
+      const product: ProductModel = {
+        ...form,
+        createdDate: new Date()
+      };
+
+      this.productService
+        .createProduct(product)
+        .subscribe({
+
+          next: (res) => {
+
+            console.log(res.message);
+
+            this.getAllProducts();
+            this.resetForm();
+            this.closeSidePanel();
+
+          },
+
+          error: (err) => {
+
+            console.error(
+              'Erreur lors de la création :',
+              err
+            );
+
+          }
+
+        });
+
+    } else {
+
+      const existingProduct =
+        this.productList.find(
+          product =>
+            product.productId === form.productId
+        );
+
+      if (!existingProduct) {
+        return;
+      }
+
+      const product: ProductModel = {
+        ...form,
+        createdDate:
+          existingProduct.createdDate
+      };
+
+      this.productService
+        .updateProduct(product)
+        .subscribe({
+
+          next: (res) => {
+
+            console.log(res.message);
+
+            this.getAllProducts();
+            this.resetForm();
+            this.closeSidePanel();
+
+          },
+
+          error: (err) => {
+
+            console.error(
+              'Erreur lors de la modification :',
+              err
+            );
+
+          }
+
+        });
+
+    }
+
+  }
 
   // =========================
-  // SAVE PRODUCT
+  // EDIT
   // =========================
 
-  onSaveProduct() {
+  onEditProduct(product: ProductModel) {
 
-    console.log(
-      'Produit à enregistrer :',
-      this.productObj
+    this.productObj = {
+
+      productId: product.productId,
+      productSku: product.productSku,
+      productName: product.productName,
+      productPrice: product.productPrice,
+      productShortName: product.productShortName,
+      productDescription: product.productDescription,
+      deliveryTimeSpan: product.deliveryTimeSpan,
+      productImageUrl: product.productImageUrl,
+      categoryId: product.categoryId
+
+    };
+
+    this.isSidePanelVisible = true;
+
+  }
+
+  // =========================
+  // DELETE
+  // =========================
+
+  onDeleteProduct(productId: number) {
+
+    const confirmDelete = confirm(
+      'Are you sure you want to delete this product?'
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    this.productService
+      .deleteProduct(productId)
+      .subscribe({
+
+        next: (res) => {
+
+          console.log(res.message);
+
+          this.getAllProducts();
+
+        },
+
+        error: (err) => {
+
+          console.error(
+            'Erreur lors de la suppression :',
+            err
+          );
+
+        }
+
+      });
+
+  }
+
+  // =========================
+  // SEARCH
+  // =========================
+
+  onSearchChange(searchTerm: string) {
+
+    this.currentSearchTerm = searchTerm;
+
+    this.filterProducts(
+      this.currentSearchTerm,
+      this.currentCategoryId
+    );
+
+  }
+
+  // =========================
+  // CATEGORY
+  // =========================
+
+  onCategoryChange(categoryId: number) {
+
+    this.currentCategoryId = categoryId;
+
+    this.filterProducts(
+      this.currentSearchTerm,
+      this.currentCategoryId
     );
 
   }

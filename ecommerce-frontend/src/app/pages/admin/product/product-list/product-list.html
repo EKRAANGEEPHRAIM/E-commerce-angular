@@ -1,0 +1,103 @@
+@if (products.length > 0) {
+
+  <div class="table-responsive">
+
+    <table class="table table-hover align-middle mb-0">
+
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>SKU</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Delivery</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        @for (product of products; track product.productId) {
+
+          <tr>
+
+            <td>
+              {{ product.productId }}
+            </td>
+
+            <td>
+              <div class="fw-semibold">
+                {{ product.productName }}
+              </div>
+
+              <small class="text-muted">
+                {{ product.productShortName }}
+              </small>
+            </td>
+
+            <td>
+              <span class="badge text-bg-secondary">
+                {{ product.productSku }}
+              </span>
+            </td>
+
+            <td>
+              {{ product.categoryId }}
+            </td>
+
+            <td>
+              <strong>
+                ${{ product.productPrice }}
+              </strong>
+            </td>
+
+            <td>
+              {{ product.deliveryTimeSpan }}
+            </td>
+
+            <td class="text-end">
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary me-2"
+                (click)="onEdit(product)"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="onDelete(product.productId)"
+              >
+                Delete
+              </button>
+
+            </td>
+
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+} @else {
+
+  <div class="text-center py-5">
+
+    <div class="fs-1 mb-3">📦</div>
+
+    <h5>No products found</h5>
+
+    <p class="text-muted">
+      No products match your search.
+    </p>
+
+  </div>
+
+}
