@@ -1,7 +1,7 @@
 import { ProductService } from './../../../services/product/products';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+
 
 import { ProductList } from './product-list/product-list';
 import { ProductFilter } from './product-filter/product-filter';
@@ -14,13 +14,14 @@ import {
   createEmptyProductForm,
   ProductFormModel
 } from '../../../models/product-form.model';
+import { ProductFilterService } from '../../../services/product/product-filter.service';
 
 @Component({
   selector: 'app-product',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
+    
     ProductList,
     ProductFilter,
     ProductForm
@@ -31,6 +32,9 @@ import {
 export class Product implements OnInit {
 
   isSidePanelVisible = false;
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
 
   productList: ProductModel[] = [];
 
@@ -46,7 +50,8 @@ export class Product implements OnInit {
     createEmptyProductForm();
 
   constructor(
-    private productService: ProductService
+    private productService: ProductService,
+      private productFilterService: ProductFilterService
   ) {}
 
   ngOnInit(): void {
@@ -58,32 +63,35 @@ export class Product implements OnInit {
   // GET PRODUCTS
   // =========================
 
-  getAllProducts() {
+getAllProducts(): void {
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.productService.getAllProducts().subscribe({
+  this.productService.getAllProducts().subscribe({
+    next: (res) => {
+      this.productList = res.data;
 
-      next: (res) => {
-
-        this.productList = res.data;
-
-        this.filteredProductList = [
-          ...this.productList
-        ];
-
-      },
-
-      error: (err) => {
-
-        console.error(
-          'Error loading products:',
-          err
+      this.filteredProductList =
+        this.productFilterService.filter(
+          this.productList,
+          this.currentSearchTerm,
+          this.currentCategoryId
         );
 
-      }
+      this.isLoading = false;
+    },
 
-    });
+    error: (err) => {
+      console.error('Error loading products:', err);
 
-  }
+        this.showErrorMessage(
+        'Impossible de charger les produits.'
+      );
+
+      this.isLoading = false;
+    }
+  });
+}
 
   // =========================
   // GET CATEGORIES
@@ -101,10 +109,7 @@ export class Product implements OnInit {
 
       error: (err) => {
 
-        console.error(
-          'Error loading categories:',
-          err
-        );
+        this.showErrorMessage("Impossible de charger les catégories.")
 
       }
 
@@ -116,35 +121,18 @@ export class Product implements OnInit {
   // FILTER
   // =========================
 
-  filterProducts(
-    searchTerm: string,
-    categoryId: number
-  ) {
+filterProducts(
+  searchTerm: string,
+  categoryId: number
+): void {
 
-    const search =
-      searchTerm.toLowerCase().trim();
-
-    this.filteredProductList =
-      this.productList.filter(product => {
-
-        const matchesSearch =
-          product.productName
-            .toLowerCase()
-            .includes(search) ||
-          product.productSku
-            .toLowerCase()
-            .includes(search);
-
-        const matchesCategory =
-          categoryId === 0 ||
-          product.categoryId === categoryId;
-
-        return matchesSearch &&
-               matchesCategory;
-
-      });
-
-  }
+  this.filteredProductList =
+    this.productFilterService.filter(
+      this.productList,
+      searchTerm,
+      categoryId
+    );
+}
 
   // =========================
   // OPEN PANEL
@@ -183,178 +171,197 @@ export class Product implements OnInit {
   // SAVE
   // =========================
 
-  onSaveProduct(form: ProductFormModel) {
-
-    if (form.productId === 0) {
-
-      const product: ProductModel = {
-        ...form,
-        createdDate: new Date()
-      };
-
-      this.productService
-        .createProduct(product)
-        .subscribe({
-
-          next: (res) => {
-
-            console.log(res.message);
-
-            this.getAllProducts();
-            this.resetForm();
-            this.closeSidePanel();
-
-          },
-
-          error: (err) => {
-
-            console.error(
-              'Erreur lors de la création :',
-              err
-            );
-
-          }
-
-        });
-
-    } else {
-
-      const existingProduct =
-        this.productList.find(
-          product =>
-            product.productId === form.productId
-        );
-
-      if (!existingProduct) {
-        return;
-      }
-
-      const product: ProductModel = {
-        ...form,
-        createdDate:
-          existingProduct.createdDate
-      };
-
-      this.productService
-        .updateProduct(product)
-        .subscribe({
-
-          next: (res) => {
-
-            console.log(res.message);
-
-            this.getAllProducts();
-            this.resetForm();
-            this.closeSidePanel();
-
-          },
-
-          error: (err) => {
-
-            console.error(
-              'Erreur lors de la modification :',
-              err
-            );
-
-          }
-
-        });
-
-    }
-
+onSaveProduct(form: ProductFormModel): void {
+  if (form.productId === 0) {
+    this.createProduct(form);
+    return;
   }
+
+  this.updateProduct(form);
+}
 
   // =========================
   // EDIT
   // =========================
 
-  onEditProduct(product: ProductModel) {
+ onEditProduct(product: ProductModel): void {
+  const {
+    productId,
+    productSku,
+    productName,
+    productPrice,
+    productShortName,
+    productDescription,
+    deliveryTimeSpan,
+    productImageUrl,
+    categoryId
+  } = product;
 
-    this.productObj = {
+  this.productObj = {
+    productId,
+    productSku,
+    productName,
+    productPrice,
+    productShortName,
+    productDescription,
+    deliveryTimeSpan,
+    productImageUrl,
+    categoryId
+  };
 
-      productId: product.productId,
-      productSku: product.productSku,
-      productName: product.productName,
-      productPrice: product.productPrice,
-      productShortName: product.productShortName,
-      productDescription: product.productDescription,
-      deliveryTimeSpan: product.deliveryTimeSpan,
-      productImageUrl: product.productImageUrl,
-      categoryId: product.categoryId
-
-    };
-
-    this.isSidePanelVisible = true;
-
-  }
+  this.isSidePanelVisible = true;
+}
 
   // =========================
   // DELETE
   // =========================
 
-  onDeleteProduct(productId: number) {
+onDeleteProduct(product: ProductModel): void {
 
-    const confirmDelete = confirm(
-      'Are you sure you want to delete this product?'
-    );
+  const confirmDelete = confirm(
+    `Are you sure you want to delete "${product.productName}"?`
+  );
 
-    if (!confirmDelete) {
-      return;
-    }
-
-    this.productService
-      .deleteProduct(productId)
-      .subscribe({
-
-        next: (res) => {
-
-          console.log(res.message);
-
-          this.getAllProducts();
-
-        },
-
-        error: (err) => {
-
-          console.error(
-            'Erreur lors de la suppression :',
-            err
-          );
-
-        }
-
-      });
-
+  if (!confirmDelete) {
+    return;
   }
+
+  this.productService
+    .deleteProduct(product.productId)
+    .subscribe({
+
+      next: (res) => {
+      this.showSuccessMessage(
+          res.message ?? 'Produit supprimé avec succès.'
+        ); 
+
+        this.getAllProducts();
+      },
+
+      error: (err) => {
+      this.showErrorMessage("Une erreur est survenue lors de la suppression")
+      }
+
+    });
+}
 
   // =========================
   // SEARCH
   // =========================
 
-  onSearchChange(searchTerm: string) {
-
-    this.currentSearchTerm = searchTerm;
-
-    this.filterProducts(
-      this.currentSearchTerm,
-      this.currentCategoryId
-    );
-
-  }
+ onSearchChange(searchTerm: string) {
+  this.currentSearchTerm = searchTerm;
+  this.filterProducts(
+    this.currentSearchTerm,
+    this.currentCategoryId
+  );
+}
 
   // =========================
   // CATEGORY
   // =========================
 
-  onCategoryChange(categoryId: number) {
+onCategoryChange(categoryId: number): void {
 
-    this.currentCategoryId = categoryId;
+  this.currentCategoryId = categoryId;
 
-    this.filterProducts(
-      this.currentSearchTerm,
-      this.currentCategoryId
-    );
+  this.filterProducts(
+    this.currentSearchTerm,
+    this.currentCategoryId
+  );
+}
 
+
+  private refreshProducts(): void {
+  this.getAllProducts();
+}
+
+
+private createProduct(form: ProductFormModel): void {
+  const product: ProductModel = {
+    ...form,
+    createdDate: new Date()
+  };
+
+  this.productService.createProduct(product).subscribe({
+    next: (res) => {
+      console.log(res.message);
+
+    this.showSuccessMessage('Produit créé avec succès.');
+
+
+      this.afterSave();
+    },
+    error: (err) => {
+this.showErrorMessage("Une erreur est survenue lors de la création")
+    }
+  });
+}
+
+
+
+
+
+
+
+private updateProduct(form: ProductFormModel): void {
+  const existingProduct = this.productList.find(
+    product => product.productId === form.productId
+  );
+
+  if (!existingProduct) {
+    console.error('Produit introuvable');
+    return;
   }
 
+  const product: ProductModel = {
+    ...form,
+    createdDate: existingProduct.createdDate
+  };
+
+  this.productService.updateProduct(product).subscribe({
+    next: (res) => {
+            this.showSuccessMessage(
+        res.message ?? 'Produit modifié avec succès.'
+      );
+
+    
+
+      this.afterSave();
+    },
+    error: (err) => {
+      console.error(
+        'Erreur lors de la modification :',
+        err
+      );
+    }
+  });
+}
+
+
+
+private afterSave(): void {
+  this.getAllProducts();
+  this.resetForm();
+  this.closeSidePanel();
+}
+
+
+private showSuccessMessage(message: string): void {
+  this.successMessage = message;
+
+  setTimeout(() => {
+    this.successMessage = '';
+  }, 3000);
+}
+
+
+
+private showErrorMessage(message: string): void {
+  this.errorMessage = message;
+
+  setTimeout(() => {
+    this.errorMessage = '';
+  }, 5000);
+}
 }

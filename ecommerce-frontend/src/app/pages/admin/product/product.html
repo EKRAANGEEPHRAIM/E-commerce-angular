@@ -1,5 +1,25 @@
 <div class="row g-3">
 
+@if (isLoading) {
+  <div class="text-center py-4">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">
+        Loading...
+      </span>
+    </div>
+
+    <p class="mt-2">
+      Chargement des produits...
+    </p>
+  </div>
+}
+
+@if (errorMessage) {
+  <div class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+}
+
   <!-- PRODUCT LIST -->
   <div
     [ngClass]="isSidePanelVisible ? 'col-md-8' : 'col-12'"
@@ -41,11 +61,19 @@
       ></app-product-filter>
 
       <!-- List -->
-      <app-product-list
-        [products]="filteredProductList"
-        (edit)="onEditProduct($event)"
-        (delete)="onDeleteProduct($event)"
-      ></app-product-list>
+      @if (!isLoading && !errorMessage) {
+  <app-product-list
+    [products]="filteredProductList"
+    (edit)="onEditProduct($event)"
+    (delete)="onDeleteProduct($event)"
+  />
+}
+
+@if (successMessage) {
+  <div class="alert alert-success">
+    {{ successMessage }}
+  </div>
+}
 
     </div>
 

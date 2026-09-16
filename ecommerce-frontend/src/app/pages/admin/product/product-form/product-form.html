@@ -1,224 +1,115 @@
-<div class="card h-100 shadow-sm">
+<form [formGroup]="form" (ngSubmit)="onSave()">
+  <div class="row g-2">
+    
+    <!-- Product SKU -->
+    <div class="col-md-6">
+      <label class="form-label small fw-bold">Product SKU</label>
+      <input 
+        type="text" 
+        class="form-control form-control-sm" 
+        formControlName="productSku" 
+        [class.is-invalid]="sku.invalid && sku.touched" 
+        [class.is-valid]="sku.valid && sku.touched"
+      >
+      @if (sku.invalid && sku.touched) {
+        <div class="text-danger small mt-1">
+          @if (sku.hasError('required')) { <div>SKU is required.</div> }
+          @if (sku.hasError('minlength')) { <div>SKU must contain at least 3 characters.</div> }
+        </div>
+      }
+    </div>
 
-  <div class="card-header bg-primary text-white">
+    <!-- Name -->
+    <div class="col-md-6">
+      <label class="form-label small fw-bold">Name</label>
+      <input 
+        type="text" 
+        class="form-control form-control-sm" 
+        formControlName="productName" 
+        [class.is-invalid]="name.invalid && name.touched" 
+        [class.is-valid]="name.valid && name.touched"
+      >
+      @if (name.invalid && name.touched) {
+        <div class="text-danger small mt-1">
+          @if (name.hasError('required')) { <div>Name is required.</div> }
+          @if (name.hasError('minlength')) { <div>Name must contain at least 3 characters.</div> }
+        </div>
+      }
+    </div>
 
-    <div class="row align-items-center">
+    <!-- Category -->
+    <div class="col-12">
+      <label class="form-label small fw-bold">Category</label>
+      <select 
+        class="form-select form-select-sm" 
+        formControlName="categoryId" 
+        [class.is-invalid]="category.invalid && category.touched" 
+        [class.is-valid]="category.valid && category.touched"
+      >
+        <option [ngValue]="0" disabled>Select a category</option>
+        @for (cat of categories; track cat.categoryId) {
+          <option [ngValue]="cat.categoryId">{{ cat.categoryName }}</option>
+        }
+      </select>
+      @if (category.invalid && category.touched) {
+        <div class="text-danger small mt-1">
+          Please select a category.
+        </div>
+      }
+    </div>
 
-      <div class="col-8">
+    <!-- Short Name -->
+    <div class="col-12">
+      <label class="form-label small fw-bold">Short Name</label>
+      <input type="text" class="form-control form-control-sm" formControlName="productShortName">
+    </div>
 
-        <h5 class="mb-0">
-          {{ product.productId === 0 ? 'New Product' : 'Edit Product' }}
-        </h5>
+    <!-- Price -->
+    <div class="col-md-6">
+      <label class="form-label small fw-bold">Price ($)</label>
+      <input 
+        type="number" 
+        class="form-control form-control-sm" 
+        formControlName="productPrice" 
+        min="0" 
+        [class.is-invalid]="price.invalid && price.touched" 
+        [class.is-valid]="price.valid && price.touched"
+      >
+      @if (price.invalid && price.touched) {
+        <div class="text-danger small mt-1">
+          @if (price.hasError('required')) { <div>Price is required.</div> }
+          @if (price.hasError('min')) { <div>Price cannot be negative.</div> }
+        </div>
+      }
+    </div>
 
-      </div>
+    <!-- Delivery Time -->
+    <div class="col-md-6">
+      <label class="form-label small fw-bold">Delivery Time</label>
+      <input type="text" class="form-control form-control-sm" formControlName="deliveryTimeSpan" placeholder="e.g. 3-5 days">
+    </div>
 
-      <div class="col-4 text-end">
+    <!-- Image URL -->
+    <div class="col-12">
+      <label class="form-label small fw-bold">Image URL</label>
+      <input type="url" class="form-control form-control-sm" formControlName="productImageUrl">
+    </div>
 
-        <button
-          type="button"
-          class="btn btn-sm btn-light"
-          (click)="onClose()"
-        >
-          Close
-        </button>
+    <!-- Description -->
+    <div class="col-12">
+      <label class="form-label small fw-bold">Description</label>
+      <textarea class="form-control form-control-sm" formControlName="productDescription" rows="3"></textarea>
+    </div>
 
-      </div>
-
+    <!-- Actions Buttons -->
+    <div class="col-12 mt-3 d-flex gap-2 justify-content-end">
+      <button type="button" class="btn btn-sm btn-secondary" (click)="onReset()">
+        Reset
+      </button>
+      <button type="submit" class="btn btn-sm btn-success" [disabled]="form.invalid">
+        Save Product
+      </button>
     </div>
 
   </div>
-
-  <div class="card-body">
-
-    <form
-      #productForm="ngForm"
-      (ngSubmit)="productForm.form.valid && onSave()"
-    >
-
-      <div class="row g-2">
-
-        <!-- SKU -->
-        <div class="col-md-6">
-
-          <label class="form-label small fw-bold">
-            Product SKU
-          </label>
-
-          <input
-            type="text"
-            class="form-control form-control-sm"
-            name="productSku"
-            [(ngModel)]="product.productSku"
-            required
-          >
-
-        </div>
-
-
-        <!-- Name -->
-        <div class="col-md-6">
-
-          <label class="form-label small fw-bold">
-            Name
-          </label>
-
-          <input
-            type="text"
-            class="form-control form-control-sm"
-            name="productName"
-            [(ngModel)]="product.productName"
-            required
-          >
-
-        </div>
-
-
-        <!-- Category -->
-        <div class="col-12">
-
-          <label class="form-label small fw-bold">
-            Category
-          </label>
-
-          <select
-            class="form-select form-select-sm"
-            name="categoryId"
-            [(ngModel)]="product.categoryId"
-            required
-          >
-
-            <option
-              [ngValue]="0"
-              disabled
-            >
-              Select a category
-            </option>
-
-            @for (category of categories; track category.categoryId) {
-
-              <option [ngValue]="category.categoryId">
-                {{ category.categoryName }}
-              </option>
-
-            }
-
-          </select>
-
-        </div>
-
-
-        <!-- Short Name -->
-        <div class="col-12">
-
-          <label class="form-label small fw-bold">
-            Short Name
-          </label>
-
-          <input
-            type="text"
-            class="form-control form-control-sm"
-            name="productShortName"
-            [(ngModel)]="product.productShortName"
-          >
-
-        </div>
-
-
-        <!-- Price -->
-        <div class="col-md-6">
-
-          <label class="form-label small fw-bold">
-            Price ($)
-          </label>
-
-          <input
-            type="number"
-            class="form-control form-control-sm"
-            name="productPrice"
-            [(ngModel)]="product.productPrice"
-            min="0"
-          >
-
-        </div>
-
-
-        <!-- Delivery -->
-        <div class="col-md-6">
-
-          <label class="form-label small fw-bold">
-            Delivery Time
-          </label>
-
-          <input
-            type="text"
-            class="form-control form-control-sm"
-            name="deliveryTimeSpan"
-            [(ngModel)]="product.deliveryTimeSpan"
-            placeholder="e.g. 3-5 days"
-          >
-
-        </div>
-
-
-        <!-- Image -->
-        <div class="col-12">
-
-          <label class="form-label small fw-bold">
-            Image URL
-          </label>
-
-          <input
-            type="url"
-            class="form-control form-control-sm"
-            name="productImageUrl"
-            [(ngModel)]="product.productImageUrl"
-          >
-
-        </div>
-
-
-        <!-- Description -->
-        <div class="col-12">
-
-          <label class="form-label small fw-bold">
-            Description
-          </label>
-
-          <textarea
-            class="form-control form-control-sm"
-            name="productDescription"
-            [(ngModel)]="product.productDescription"
-            rows="3"
-          ></textarea>
-
-        </div>
-
-
-        <!-- Buttons -->
-        <div class="col-12 mt-3 d-flex gap-2 justify-content-end">
-
-          <button
-            type="button"
-            class="btn btn-sm btn-secondary"
-            (click)="onReset()"
-          >
-            Reset
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-sm btn-success"
-            [disabled]="productForm.invalid"
-          >
-            Save Product
-          </button>
-
-        </div>
-
-      </div>
-
-    </form>
-
-  </div>
-
-</div>
+</form>

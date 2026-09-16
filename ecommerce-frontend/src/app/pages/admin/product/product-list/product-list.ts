@@ -14,13 +14,13 @@ export class ProductList {
 
   @Output() edit = new EventEmitter<any>();
 
-  @Output() delete = new EventEmitter<number>();
+  @Output() delete = new EventEmitter<ProductModel>();
 
   onEdit(product: ProductModel) {
     this.edit.emit(product);
   }
 
-  onDelete(productId: number) {
-    this.delete.emit(productId);
+  onDelete(product: ProductModel) {
+    this.delete.emit(product);
   }
 }
