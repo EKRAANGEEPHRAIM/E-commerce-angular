@@ -1,6 +1,6 @@
 import { ProductService } from './../../../services/product/products';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , signal , computed , effect } from '@angular/core';
 
 
 import { ProductList } from './product-list/product-list';
@@ -31,28 +31,41 @@ import { ProductFilterService } from '../../../services/product/product-filter.s
 })
 export class Product implements OnInit {
 
-  isSidePanelVisible = false;
+  isSidePanelVisible = signal(false);
   isLoading = false;
-  errorMessage = '';
-  successMessage = '';
+  errorMessage = signal('');
+  successMessage = signal('');
 
-  productList: ProductModel[] = [];
+  productList = signal<ProductModel[]>([]);
 
   categoryList: CategoryModel[] = [];
 
-  filteredProductList: ProductModel[] = [];
+ 
+  filteredProductList = computed(() => {
+  return this.productFilterService.filter(
+    this.productList(),
+    this.currentSearchTerm(),
+    this.currentCategoryId()
+  );
+});
 
-  currentSearchTerm = '';
+  currentSearchTerm = signal('');
 
-  currentCategoryId = 0;
+  currentCategoryId = signal(0);
 
   productObj: ProductFormModel =
     createEmptyProductForm();
 
   constructor(
-    private productService: ProductService,
-      private productFilterService: ProductFilterService
-  ) {}
+  private productService: ProductService,
+  private productFilterService: ProductFilterService
+) {
+  effect(() => {
+    console.log('Recherche :', this.currentSearchTerm());
+    console.log('Catégorie :', this.currentCategoryId());
+    console.log('Nombre de produits :', this.productList().length);
+  });
+}
 
   ngOnInit(): void {
     this.getAllCategory();
@@ -65,26 +78,18 @@ export class Product implements OnInit {
 
 getAllProducts(): void {
   this.isLoading = true;
-  this.errorMessage = '';
+  this.errorMessage.set('');
 
   this.productService.getAllProducts().subscribe({
     next: (res) => {
-      this.productList = res.data;
-
-      this.filteredProductList =
-        this.productFilterService.filter(
-          this.productList,
-          this.currentSearchTerm,
-          this.currentCategoryId
-        );
-
+      this.productList.set(res.data);
       this.isLoading = false;
     },
 
     error: (err) => {
       console.error('Error loading products:', err);
 
-        this.showErrorMessage(
+      this.showErrorMessage(
         'Impossible de charger les produits.'
       );
 
@@ -117,22 +122,7 @@ getAllProducts(): void {
 
   }
 
-  // =========================
-  // FILTER
-  // =========================
 
-filterProducts(
-  searchTerm: string,
-  categoryId: number
-): void {
-
-  this.filteredProductList =
-    this.productFilterService.filter(
-      this.productList,
-      searchTerm,
-      categoryId
-    );
-}
 
   // =========================
   // OPEN PANEL
@@ -142,7 +132,7 @@ filterProducts(
 
     this.resetForm();
 
-    this.isSidePanelVisible = true;
+    this.isSidePanelVisible.set(true);
 
   }
 
@@ -152,7 +142,7 @@ filterProducts(
 
   closeSidePanel() {
 
-    this.isSidePanelVisible = false;
+    this.isSidePanelVisible.set(false);
 
   }
 
@@ -209,7 +199,7 @@ onSaveProduct(form: ProductFormModel): void {
     categoryId
   };
 
-  this.isSidePanelVisible = true;
+  this.isSidePanelVisible.set(true);
 }
 
   // =========================
@@ -249,12 +239,8 @@ onDeleteProduct(product: ProductModel): void {
   // SEARCH
   // =========================
 
- onSearchChange(searchTerm: string) {
-  this.currentSearchTerm = searchTerm;
-  this.filterProducts(
-    this.currentSearchTerm,
-    this.currentCategoryId
-  );
+ onSearchChange(searchTerm: string): void {
+  this.currentSearchTerm.set(searchTerm);
 }
 
   // =========================
@@ -262,19 +248,11 @@ onDeleteProduct(product: ProductModel): void {
   // =========================
 
 onCategoryChange(categoryId: number): void {
-
-  this.currentCategoryId = categoryId;
-
-  this.filterProducts(
-    this.currentSearchTerm,
-    this.currentCategoryId
-  );
+  this.currentCategoryId.set(categoryId);
 }
 
 
-  private refreshProducts(): void {
-  this.getAllProducts();
-}
+
 
 
 private createProduct(form: ProductFormModel): void {
@@ -305,7 +283,7 @@ this.showErrorMessage("Une erreur est survenue lors de la création")
 
 
 private updateProduct(form: ProductFormModel): void {
-  const existingProduct = this.productList.find(
+  const existingProduct = this.productList().find(
     product => product.productId === form.productId
   );
 
@@ -348,20 +326,20 @@ private afterSave(): void {
 
 
 private showSuccessMessage(message: string): void {
-  this.successMessage = message;
+  this.successMessage.set(message);
 
   setTimeout(() => {
-    this.successMessage = '';
-  }, 3000);
+    this.successMessage.set('');
+  }, 5000);
 }
 
 
 
 private showErrorMessage(message: string): void {
-  this.errorMessage = message;
+  this.errorMessage.set(message);
 
   setTimeout(() => {
-    this.errorMessage = '';
+    this.errorMessage.set('');
   }, 5000);
 }
 }

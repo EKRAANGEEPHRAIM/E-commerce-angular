@@ -1,4 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output
+} from '@angular/core';
+
 import { ProductModel } from '../../../../models/product.model';
 
 @Component({
@@ -12,15 +18,15 @@ export class ProductList {
 
   @Input() products: ProductModel[] = [];
 
-  @Output() edit = new EventEmitter<any>();
+  @Output() edit = new EventEmitter<ProductModel>();
 
   @Output() delete = new EventEmitter<ProductModel>();
 
-  onEdit(product: ProductModel) {
+  onEdit(product: ProductModel): void {
     this.edit.emit(product);
   }
 
-  onDelete(product: ProductModel) {
+  onDelete(product: ProductModel): void {
     this.delete.emit(product);
   }
 }
